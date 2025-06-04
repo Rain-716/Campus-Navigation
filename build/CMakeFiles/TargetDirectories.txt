@@ -1,0 +1,3 @@
+C:/Users/Rain/Desktop/CampusNavigation/build/CMakeFiles/CampusNavigation.dir
+C:/Users/Rain/Desktop/CampusNavigation/build/CMakeFiles/edit_cache.dir
+C:/Users/Rain/Desktop/CampusNavigation/build/CMakeFiles/rebuild_cache.dir

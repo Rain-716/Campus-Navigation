@@ -1,0 +1,20 @@
+[
+{
+  "directory": "C:/Users/Rain/Desktop/CampusNavigation/build",
+  "command": "C:\\TDM-GCC-64\\bin\\g++.exe -IC:/Users/Rain/Desktop/CampusNavigation -IC:/Users/Rain/Desktop/CampusNavigation/Algorithm -IC:/Users/Rain/Desktop/CampusNavigation/LGraph -g -std=gnu++2a -o CMakeFiles\\CampusNavigation.dir\\Algorithm\\Algorithm.cpp.obj -c C:\\Users\\Rain\\Desktop\\CampusNavigation\\Algorithm\\Algorithm.cpp",
+  "file": "C:\\Users\\Rain\\Desktop\\CampusNavigation\\Algorithm\\Algorithm.cpp",
+  "output": "CMakeFiles\\CampusNavigation.dir\\Algorithm\\Algorithm.cpp.obj"
+},
+{
+  "directory": "C:/Users/Rain/Desktop/CampusNavigation/build",
+  "command": "C:\\TDM-GCC-64\\bin\\g++.exe -IC:/Users/Rain/Desktop/CampusNavigation -IC:/Users/Rain/Desktop/CampusNavigation/Algorithm -IC:/Users/Rain/Desktop/CampusNavigation/LGraph -g -std=gnu++2a -o CMakeFiles\\CampusNavigation.dir\\LGraph\\LGraph.cpp.obj -c C:\\Users\\Rain\\Desktop\\CampusNavigation\\LGraph\\LGraph.cpp",
+  "file": "C:\\Users\\Rain\\Desktop\\CampusNavigation\\LGraph\\LGraph.cpp",
+  "output": "CMakeFiles\\CampusNavigation.dir\\LGraph\\LGraph.cpp.obj"
+},
+{
+  "directory": "C:/Users/Rain/Desktop/CampusNavigation/build",
+  "command": "C:\\TDM-GCC-64\\bin\\g++.exe -IC:/Users/Rain/Desktop/CampusNavigation -IC:/Users/Rain/Desktop/CampusNavigation/Algorithm -IC:/Users/Rain/Desktop/CampusNavigation/LGraph -g -std=gnu++2a -o CMakeFiles\\CampusNavigation.dir\\main.cpp.obj -c C:\\Users\\Rain\\Desktop\\CampusNavigation\\main.cpp",
+  "file": "C:\\Users\\Rain\\Desktop\\CampusNavigation\\main.cpp",
+  "output": "CMakeFiles\\CampusNavigation.dir\\main.cpp.obj"
+}
+]
