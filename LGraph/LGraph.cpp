@@ -1,5 +1,6 @@
 #include <algorithm>
-#include <numeric>
+#include <vector>
+#include <string>
 #include "LGraph.h"
 
 namespace Graph
@@ -42,8 +43,12 @@ namespace Graph
             throw GraphException("顶点"+name+"不存在");
         }
         Vertex id=it->second;
-        for (Edge& e : ver_list[id].adj){   // 删除与该顶点相连的所有边
-            DeleteEdge(e.to,id);
+        std::vector <Vertex> neighbors;              // 先收集所有相邻顶点
+        for (const Edge& e : ver_list[id].adj) {
+            neighbors.push_back(e.to);
+        }
+        for (Vertex v : neighbors){            // 依次删除与该顶点相关的所有边
+            DeleteEdge(v,id);
             edgeNum--;
         }
         ver_list.erase(ver_list.begin()+id);    // 从列表中移除该顶点
@@ -55,12 +60,12 @@ namespace Graph
             }
         }
         for (VertexNode& v : ver_list){     // 更新所有剩余边的 from/to
-            for (Edge& edge : v.adj){
-                if (edge.from>id){
-                    edge.from--;
+            for (Edge& e : v.adj){
+                if (e.from>id){
+                    e.from--;
                 }
-                if (edge.to>id){
-                    edge.to--;
+                if (e.to>id){
+                    e.to--;
                 }
             }
         }
@@ -194,14 +199,14 @@ namespace Graph
     {
         std::vector <Edge> edges;
         edges.reserve(edgeNum);
-        for (Vertex v=0;v<vertNum;v++){
-            for (const Edge& e : ver_list[v].adj){
-                if (v<e.to){
+        for (Vertex u=0;u<vertNum;u++){
+            for (const Edge& e : ver_list[u].adj){
+                if (u<e.to){
                     edges.push_back(e);
                 }
             }
         }
-        std::sort(edges.begin(),edges.end(),[&](const Edge&e1,const Edge&e2){ return e1.weight>e2.weight; });
+        std::sort(edges.begin(),edges.end(),[&](const Edge& e1,const Edge& e2){ return e1.weight>e2.weight; });
         return edges;
     }
 }

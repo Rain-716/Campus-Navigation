@@ -8,19 +8,12 @@ namespace Graph
 {
     namespace Algorithm
     {
-        DSU::DSU(Vertex n) : parent(n)      // DSU 实现
-        {
-            for (Vertex i=0;i<n;i++){
-                parent[i]=i;
-            }
-        }
-
         Vertex DSU::Find(Vertex x)
         {
             return x==parent[x] ? x : parent[x]=Find(parent[x]);
         }
 
-        bool DSU::Union(Vertex x,Vertex y)
+        bool DSU::Union(Vertex x,Vertex y) noexcept
         {
             x=Find(x);
             y=Find(y);
@@ -31,10 +24,10 @@ namespace Graph
             return true;
         }
 
-        bool IsConnected(const LGraph& graph)   // 判断连通性
+        bool IsConnected(const LGraph& graph) noexcept   // 判断连通性
         {
-            int n=graph.VertexCount();
-            if (n==0){
+            size_t n=graph.VertexCount();
+            if (!n){
                 return true;
             }
             DSU dsu (n);
@@ -46,7 +39,7 @@ namespace Graph
                     }
                 }
             }
-            int root=dsu.Find(0);
+            Vertex root=dsu.Find(0);
             for (int i=0;i<n;i++){
                 if (ver_list[i].adj.empty()||dsu.Find(i)!=root){
                     return false;
@@ -55,7 +48,7 @@ namespace Graph
             return true;
         }
 
-        bool ExistEulerCircuit(const LGraph& graph)     // 判断是否存在欧拉回路
+        bool ExistEulerCircuit(const LGraph& graph) noexcept    // 判断是否存在欧拉回路
         {
             if (!IsConnected(graph)){
                 return false;
@@ -69,12 +62,12 @@ namespace Graph
             return true;
         }
 
-        std::list<Vertex> EulerCircuit(const LGraph& graph,const Vertex& start)     // 计算欧拉回路
+        std::list<Vertex> EulerCircuit(const LGraph& graph,Vertex start)     // 计算欧拉回路
         {
             if (!ExistEulerCircuit(graph)){
                 return {};
             }
-            int n=graph.VertexCount();
+            size_t n=graph.VertexCount();
             const std::vector <VertexNode>& ver_list=graph.List();
             // 将每条无向边拆成两条有向边，编号为 0..2m-1
             // 用 vector <bool> 标记每条“有向边”是否已访问
@@ -89,23 +82,23 @@ namespace Graph
                     }
                 }
             }
-            std::vector <bool> used(2*edgeId,false);                    // 标记 2*edge_id 个“有向边”
-            std::vector <size_t> iterIdx(n,0);
+            std::vector <bool> used(2*edgeId,false);                    // 标记 2*edgeId 个“有向边”
+            std::vector <size_t> idx(n,0);
             std::stack <Vertex> stk;
             std::list <Vertex> res;
             stk.push(start);
             while (!stk.empty()){
                 Vertex u=stk.top();
-                auto& idx=iterIdx[u];
-                while (idx<adj[u].size()&&used[2*adj[u][idx].second+(adj[u][idx].first<u ? 1 : 0)]){    // 寻找一条未访问的有向边
-                    idx++;
+                auto& it=idx[u];
+                while (it<adj[u].size()&&used[2*adj[u][it].second+(adj[u][it].first<u ? 1 : 0)]){    // 寻找一条未访问的有向边
+                    it++;
                 }
-                if (idx==adj[u].size()){        // 没有可走的边时，输出顶点
+                if (it==adj[u].size()){        // 没有可走的边时，输出顶点
                     stk.pop();
                     res.push_back(u);
                 }
                 else {
-                    auto [v,eid]=adj[u][idx];   // 标记对应的两条有向边已访问
+                    auto [v,eid]=adj[u][it];   // 标记对应的两条有向边已访问
                     used[2*eid]=true;
                     used[2*eid+1]=true;
                     stk.push(v);
@@ -114,23 +107,18 @@ namespace Graph
             return res;
         }
 
-        int GetShortestPath(const LGraph& graph,const std::string& vertex_x_name,const std::string& vertex_y_name)  // 单源最短路径（Dijkstra）
+        int GetShortestPath(const LGraph& graph,const std::string& xName,const std::string& yName)  // 单源最短路径（Dijkstra）
         {
-            const std::map<std::string,Vertex>& ver_map=graph.Map();
-            auto itx=ver_map.find(vertex_x_name);
-            auto ity=ver_map.find(vertex_y_name);
+            const std::map <std::string,Vertex>& ver_map=graph.Map();
+            auto itx=ver_map.find(xName);
+            auto ity=ver_map.find(yName);
             if (itx==ver_map.end()||ity==ver_map.end()){
                 throw GraphException("顶点不存在");
             }
             Vertex xid=itx->second;
             Vertex yid=ity->second;
             int n=graph.VertexCount();
-            const std::vector<VertexNode>& ver_list=graph.List();
-
-            std::vector<const std::list<Edge>*> adj(n);     // 建立邻接引索，不再拷贝链表
-            for (int i=0;i<n;i++){
-                adj[i]=&ver_list[i].adj;
-            }
+            const std::vector <VertexNode>& ver_list=graph.List();
 
             const long long INF=std::numeric_limits <long long>::max();
             std::vector <long long> dist(n,INF);
@@ -146,10 +134,11 @@ namespace Graph
                 if (d>dist[u]){
                     continue;
                 }
-                if (u==yid)
+                if (u==yid){
                     break;      // 提前退出
+                }
 
-                for (const Edge& e : *adj[u]){
+                for (const Edge& e : ver_list[u].adj){
                     Vertex v=e.to;
                     long long plus=d+e.weight;
                     if (plus<dist[v]){
@@ -186,7 +175,7 @@ namespace Graph
 
         std::vector<Edge> MinimumSpanningTree(const LGraph& graph)      // Kruskal 最小生成树
         {
-            int n=graph.VertexCount();
+            size_t n=graph.VertexCount();
             if (n<2){
                 return {};
             }

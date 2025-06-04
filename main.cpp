@@ -3,7 +3,7 @@
 #include <sstream>
 #include <vector>
 #include <string>
-#include <cassert>
+#include <limits>
 #include "LGraph/LGraph.h"
 #include "Algorithm/Algorithm.h"
 #include "LocationInfo.h"
@@ -19,7 +19,7 @@ static const std::string edges_path="data/edges.csv";
 std::vector<LocationInfo> ReadNodes(const std::string& path)
 {
     std::ifstream fin(path);
-    if (!fin.is_open()){
+    if (!fin){
         throw GraphException("无法打开节点文件: "+path);
     }
     std::vector <LocationInfo> nodes;
@@ -45,19 +45,19 @@ std::vector<LocationInfo> ReadNodes(const std::string& path)
     return nodes;
 }
 
-struct edge     // 读取边文件
+struct EdgeData     // 读取边文件
 {
     std::string from,to;
     int length;
 };
 
-std::vector<edge> ReadEdges(const std::string& path)
+std::vector<EdgeData> ReadEdges(const std::string& path)
 {
     std::ifstream fin(path);
-    if (!fin.is_open()){
+    if (!fin){
         throw GraphException("无法打开边文件: "+path);
     }
-    std::vector <edge> edges;
+    std::vector <EdgeData> edges;
     std::string line;
     while (std::getline(fin,line)){
         if (line.empty()){
@@ -84,19 +84,18 @@ void init(LGraph& graph)        // 初始化图：从文件加载节点与边
 {
     graph=LGraph();             // 重置为新图
     std::vector <LocationInfo> nodes=ReadNodes(nodes_path);
-    std::vector <edge> edges=ReadEdges(edges_path);
+    std::vector <EdgeData> edges=ReadEdges(edges_path);
     for (const LocationInfo& v : nodes){
         graph.InsertVertex(v);
     }
-    for (const edge& e : edges){
+    for (const EdgeData& e : edges){
         graph.InsertEdge(e.from,e.to,e.length);
     }
 }
 
 void ShowAllNodes(const LGraph& graph)      // 显示所有顶点
 {
-    const std::vector <VertexNode>& ver_list=graph.List();
-    for (const VertexNode& v : ver_list){
+    for (const VertexNode& v : graph.List()){
         const LocationInfo& info=v.info;
         std::cout<<info.name<<","<<info.type<<","<<info.visitTime<<std::endl;
     }
@@ -115,7 +114,7 @@ void ShowAllEdges(const LGraph& graph)      // 显示所有边
 void StoreNodes(const std::string& path,const LGraph& graph)    // 将顶点存储到文件
 {
     std::ofstream fout(path);
-    if (!fout.is_open()){
+    if (!fout){
         throw GraphException("无法创建文件: "+path);
     }
     for (const VertexNode& v : graph.List()){
@@ -127,12 +126,14 @@ void StoreNodes(const std::string& path,const LGraph& graph)    // 将顶点存�
 void StoreEdges(const std::string& path,const LGraph& graph)    // 将边存储到文件
 {
     std::ofstream fout(path);
-    if (!fout.is_open()){
+    if (!fout){
         throw GraphException("无法创建文件: "+path);
     }
     std::vector<Edge> edges=graph.SortedEdges();
     for (const Edge& e : edges){
-        fout<<e.from<<","<<e.to<<","<<e.weight<<"\n";
+        std::string name_u=graph.GetVertex(e.from).name;
+        std::string name_v=graph.GetVertex(e.to).name;
+        fout<<name_u<<","<<name_v<<","<<e.weight<<"\n";
     }
 }
 
@@ -150,17 +151,17 @@ int main()
     while (true)
     {
         int choice;
-        std::cout<<"欢迎使用校园导航系统！\n"
-                 <<"请选择您要进行的操作：\n"
-                 <<"1. 顶点相关操作\n"
-                 <<"2. 边相关操作\n"
-                 <<"3. 从文件中重新加载点与边\n"
-                 <<"4. 判断是否存在欧拉回路\n"
-                 <<"5. 求任意两点间的最短距离\n"
-                 <<"6. 求最小生成树\n"
-                 <<"7. 求拓扑受限的最短路径\n"
-                 <<"8. 退出程序\n"
-                 <<"请输入选项编号：";
+        std::cout<< "欢迎使用校园导航系统！\n"
+                    "请选择您要进行的操作：\n"
+                    "1. 顶点相关操作\n"
+                    "2. 边相关操作\n"
+                    "3. 从文件中重新加载点与边\n"
+                    "4. 判断是否存在欧拉回路\n"
+                    "5. 求任意两点间的最短距离\n"
+                    "6. 求最小生成树\n"
+                    "7. 求拓扑受限的最短路径\n"
+                    "8. 退出程序\n"
+                    "请输入选项编号：";
         if (!(std::cin>>choice)){
             std::cin.clear();
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
@@ -173,14 +174,14 @@ int main()
                 case 1:
                 {
                     int sub;
-                    std::cout<<"顶点相关操作：\n"
-                             <<"1. 输出特定顶点信息\n"
-                             <<"2. 输出所有顶点信息\n"
-                             <<"3. 添加一个顶点\n"
-                             <<"4. 删除一个顶点\n"
-                             <<"5. 将顶点存储到文件\n"
-                             <<"6. 返回上一级菜单\n"
-                             <<"请输入选项编号：";
+                    std::cout<< "顶点相关操作：\n"
+                                "1. 输出特定顶点信息\n"
+                                "2. 输出所有顶点信息\n"
+                                "3. 添加一个顶点\n"
+                                "4. 删除一个顶点\n"
+                                "5. 将顶点存储到文件\n"
+                                "6. 返回上一级菜单\n"
+                                "请输入选项编号：";
                     std::cin>>sub;
                     switch (sub)
                     {
@@ -190,8 +191,8 @@ int main()
                             std::string name;
                             std::cin>>name;
                             LocationInfo info=graph.GetVertex(name);
-                            std::cout<<"顶点名称："<<info.name<<"\n"
-                                     <<"顶点类型："<<info.type<<"\n"
+                            std::cout<<"顶点名称："<<info.name
+                                     <<"顶点类型："<<info.type
                                      <<"建议游览时间："<<info.visitTime<<" 分钟\n";
                             break;
                         }
@@ -235,14 +236,14 @@ int main()
                 case 2:
                 {
                     int sub;
-                    std::cout<<"边相关操作：\n"
-                             <<"1. 输出特定边信息\n"
-                             <<"2. 输出所有边信息\n"
-                             <<"3. 添加一条边\n"
-                             <<"4. 删除一条边\n"
-                             <<"5. 将边存储到文件\n"
-                             <<"6. 返回上一级菜单\n"
-                             <<"请输入选项编号：";
+                    std::cout<< "边相关操作：\n"
+                                "1. 输出特定边信息\n"
+                                "2. 输出所有边信息\n"
+                                "3. 添加一条边\n"
+                                "4. 删除一条边\n"
+                                "5. 将边存储到文件\n"
+                                "6. 返回上一级菜单\n"
+                                "请输入选项编号：";
                     std::cin>>sub;
                     switch (sub)
                     {
@@ -323,7 +324,7 @@ int main()
                         std::cout<<"图不连通，无法构造最小生成树。\n";
                     }
                     else{
-                        std::vector<Edge> mst=MinimumSpanningTree(graph);
+                        std::vector <Edge> mst=MinimumSpanningTree(graph);
                         if (mst.empty()){
                             std::cout<<"图无法形成生成树（可能存在孤立顶点）。\n";
                         }
