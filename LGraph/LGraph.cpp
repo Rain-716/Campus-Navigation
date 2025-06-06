@@ -33,7 +33,7 @@ namespace Graph
             throw GraphException("顶点"+vertexInfo.name+"已存在");
         }
         ver_list.emplace_back(vertexInfo);
-        ver_map[vertexInfo.name]=vertNum++;
+        ver_map[vertexInfo.name]=++vertNum;
     }
 
     void LGraph::DeleteVertex(const std::string& name)
@@ -114,7 +114,7 @@ namespace Graph
         ver_list[vid].adj.emplace_back(vid,uid,weight);
         edgeNum++;
     }
-
+    
     void LGraph::DeleteEdge(const std::string& u,const std::string& v)
     {
         auto it_u=ver_map.find(u);
