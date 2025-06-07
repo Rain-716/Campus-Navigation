@@ -4,6 +4,7 @@
 #include <list>
 #include <string>
 #include <vector>
+#include <functional>
 #include "LGraph/LGraph.h"
 #include "GraphException.h"
 

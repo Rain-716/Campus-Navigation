@@ -1,6 +1,4 @@
 #include <algorithm>
-#include <vector>
-#include <string>
 #include "LGraph.h"
 
 namespace Graph
@@ -43,15 +41,12 @@ namespace Graph
             throw GraphException("顶点"+name+"不存在");
         }
         Vertex id=it->second;
-        std::vector <Vertex> neighbors;              // 先收集所有相邻顶点
-        for (const Edge& e : ver_list[id].adj) {
-            neighbors.push_back(e.to);
-        }
-        for (Vertex v : neighbors){            // 依次删除与该顶点相关的所有边
-            DeleteEdge(v,id);
+        for (Edge& e : ver_list[id].adj){
+            std::list <Edge>& adjList=ver_list[e.to].adj;
+            adjList.remove_if([id](const Edge& ed){ return ed.to==id; });
             edgeNum--;
         }
-        ver_list.erase(ver_list.begin()+id);    // 从列表中移除该顶点
+        ver_list.erase(ver_list.begin()+id);
         ver_map.erase(it);
         vertNum--;
         for (auto& [key,val] : ver_map){    // 更新映射中所有 ID > id 的值
@@ -77,8 +72,7 @@ namespace Graph
         if (it==ver_map.end()){
             throw GraphException("顶点"+oldName+"不存在");
         }
-        Vertex id=it->second;
-        ver_list[id].info=newInfo;
+        ver_list[it->second].info=newInfo;
     }
 
     LocationInfo LGraph::GetVertex(const std::string& name) const
@@ -93,7 +87,7 @@ namespace Graph
     LocationInfo LGraph::GetVertex(Vertex vertex) const
     {
         if (vertex>=vertNum){
-            throw GraphException("该顶点不存在");
+            throw GraphException("顶点ID越界: "+std::to_string(vertex));
         }
         return ver_list[vertex].info;
     }
@@ -105,11 +99,11 @@ namespace Graph
         if (it_u==ver_map.end()||it_v==ver_map.end()){
             throw GraphException("插入边时，顶点不存在");
         }
-        Vertex uid=it_u->second;
-        Vertex vid=it_v->second;
         if (ExistEdge(u,v)){
             throw GraphException("边"+u+" - "+v+"已存在");
         }
+        Vertex uid=it_u->second;
+        Vertex vid=it_v->second;
         ver_list[uid].adj.emplace_back(uid,vid,weight);
         ver_list[vid].adj.emplace_back(vid,uid,weight);
         edgeNum++;
@@ -122,32 +116,21 @@ namespace Graph
         if (it_u==ver_map.end()||it_v==ver_map.end()){
             throw GraphException("删除边时，顶点不存在");
         }
-        Vertex uid=it_u->second;
-        Vertex vid=it_v->second;
         if (!ExistEdge(u,v)){
             throw GraphException("要删除的边"+u+" - "+v+"不存在");
         }
+        Vertex uid=it_u->second;
+        Vertex vid=it_v->second;
         DeleteEdge(uid,vid);
         edgeNum--;
     }
 
     void LGraph::DeleteEdge(Vertex u,Vertex v)
     {
-        std::list <Edge>& u_adj=ver_list[u].adj;
-        for (auto it=u_adj.begin();it!=u_adj.end();it++){
-            if (it->to==v){
-                u_adj.erase(it);
-                break;
-            }
-        }
-        std::list <Edge>& v_adj=ver_list[v].adj;
-        for (auto it=v_adj.begin();it!=v_adj.end();it++)
-        {
-            if (it->to==u){
-                v_adj.erase(it);
-                break;
-            }
-        }
+        std::list <Edge>& adj_u=ver_list[u].adj;
+        adj_u.remove_if([v](const Edge& e) { return e.to==v; });
+        std::list <Edge>& adj_v=ver_list[v].adj;
+        adj_v.remove_if([u](const Edge& e) { return e.to==u; });
     }
 
     void LGraph::UpdateEdge(const std::string& u,const std::string& v,EWeight newWeight)

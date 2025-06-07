@@ -3,6 +3,7 @@
 #include <sstream>
 #include <vector>
 #include <string>
+#include <tuple>
 #include <limits>
 #include "LGraph/LGraph.h"
 #include "Algorithm/Algorithm.h"
@@ -15,134 +16,19 @@ using namespace Graph::Algorithm;
 static const std::string nodes_path="data/nodes.csv";
 static const std::string edges_path="data/edges.csv";
 
-// 读取节点文件
-std::vector<LocationInfo> ReadNodes(const std::string& path)
-{
-    std::ifstream fin(path);
-    if (!fin){
-        throw GraphException("无法打开节点文件: "+path);
-    }
-    std::vector <LocationInfo> nodes;
-    std::string line;
-    while (std::getline(fin,line)){
-        if (line.empty()){
-            continue;
-        }
-        std::istringstream sin(line);
-        std::string name,type;
-        int visitTime;
-        if (!std::getline(sin,name,',')){
-            continue;
-        }
-        if (!std::getline(sin,type,',')){
-            continue;
-        }
-        if (!(sin>>visitTime)){
-            continue;
-        }
-        nodes.emplace_back(name,type,visitTime);
-    }
-    return nodes;
-}
-
-struct EdgeData     // 读取边文件
-{
-    std::string from,to;
-    int length;
-};
-
-std::vector<EdgeData> ReadEdges(const std::string& path)
-{
-    std::ifstream fin(path);
-    if (!fin){
-        throw GraphException("无法打开边文件: "+path);
-    }
-    std::vector <EdgeData> edges;
-    std::string line;
-    while (std::getline(fin,line)){
-        if (line.empty()){
-            continue;
-        }
-        std::istringstream sin(line);
-        std::string from,to;
-        int weight;
-        if (!std::getline(sin,from,',')){
-            continue;
-        }
-        if (!std::getline(sin,to,',')){
-            continue;
-        }
-        if (!(sin>>weight)){
-            continue;
-        }
-        edges.push_back({from,to,weight});
-    }
-    return edges;
-}
-
-void init(LGraph& graph)        // 初始化图：从文件加载节点与边
-{
-    graph=LGraph();             // 重置为新图
-    std::vector <LocationInfo> nodes=ReadNodes(nodes_path);
-    std::vector <EdgeData> edges=ReadEdges(edges_path);
-    for (const LocationInfo& v : nodes){
-        graph.InsertVertex(v);
-    }
-    for (const EdgeData& e : edges){
-        graph.InsertEdge(e.from,e.to,e.length);
-    }
-}
-
-void ShowAllNodes(const LGraph& graph)      // 显示所有顶点
-{
-    for (const VertexNode& v : graph.List()){
-        const LocationInfo& info=v.info;
-        std::cout<<info.name<<","<<info.type<<","<<info.visitTime<<std::endl;
-    }
-}
-
-void ShowAllEdges(const LGraph& graph)      // 显示所有边
-{
-    std::vector <Edge> edges=graph.SortedEdges();
-    for (const Edge& e : edges){
-        const std::string& name_u=graph.GetVertex(e.from).name;
-        const std::string& name_v=graph.GetVertex(e.to).name;
-        std::cout<<name_u<<","<<name_v<<","<<e.weight<<std::endl;
-    }
-}
-
-void StoreNodes(const std::string& path,const LGraph& graph)    // 将顶点存储到文件
-{
-    std::ofstream fout(path);
-    if (!fout){
-        throw GraphException("无法创建文件: "+path);
-    }
-    for (const VertexNode& v : graph.List()){
-        const LocationInfo& info=v.info;
-        fout<<info.name<<","<<info.type<<","<<info.visitTime<<"\n";
-    }
-}
-
-void StoreEdges(const std::string& path,const LGraph& graph)    // 将边存储到文件
-{
-    std::ofstream fout(path);
-    if (!fout){
-        throw GraphException("无法创建文件: "+path);
-    }
-    std::vector<Edge> edges=graph.SortedEdges();
-    for (const Edge& e : edges){
-        std::string name_u=graph.GetVertex(e.from).name;
-        std::string name_v=graph.GetVertex(e.to).name;
-        fout<<name_u<<","<<name_v<<","<<e.weight<<"\n";
-    }
-}
+// 工具函数声明
+std::vector<LocationInfo> ReadNodes(const std::string& path);
+std::vector<std::tuple<std::string,std::string,int>> ReadEdges(const std::string& path);
+void init(LGraph& graph);
+void ShowAllNodes(const LGraph& graph);
+void ShowAllEdges(const LGraph& graph);
+void StoreNodes(const std::string& path,const LGraph& graph);
+void StoreEdges(const std::string& path,const LGraph& graph);
 
 int main()
 {
     LGraph graph;
-    try {
-        init(graph);
-    }
+    try { init(graph); }
     catch (const GraphException& e){
         std::cerr<<"初始化失败: "<<e.what()<<std::endl;
         return -1;
@@ -150,18 +36,17 @@ int main()
 
     while (true)
     {
+        std::cout<<R"(欢迎使用校园导航系统！
+        请选择操作：
+        1. 顶点操作
+        2. 边操作
+        3. 重新加载数据
+        4. 判断欧拉回路
+        5. 最短距离
+        6. 最小生成树
+        7. 拓扑受限路径
+        8. 退出 )";
         int choice;
-        std::cout<< "欢迎使用校园导航系统！\n"
-                    "请选择您要进行的操作：\n"
-                    "1. 顶点相关操作\n"
-                    "2. 边相关操作\n"
-                    "3. 从文件中重新加载点与边\n"
-                    "4. 判断是否存在欧拉回路\n"
-                    "5. 求任意两点间的最短距离\n"
-                    "6. 求最小生成树\n"
-                    "7. 求拓扑受限的最短路径\n"
-                    "8. 退出程序\n"
-                    "请输入选项编号：";
         if (!(std::cin>>choice)){
             std::cin.clear();
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
@@ -173,21 +58,14 @@ int main()
             {
                 case 1:
                 {
+                    std::cout<<"顶点操作：1.查询 2.列出所有 3.添加 4.删除 5.保存 6.返回\n";
                     int sub;
-                    std::cout<< "顶点相关操作：\n"
-                                "1. 输出特定顶点信息\n"
-                                "2. 输出所有顶点信息\n"
-                                "3. 添加一个顶点\n"
-                                "4. 删除一个顶点\n"
-                                "5. 将顶点存储到文件\n"
-                                "6. 返回上一级菜单\n"
-                                "请输入选项编号：";
                     std::cin>>sub;
                     switch (sub)
                     {
                         case 1:
                         {
-                            std::cout<<"请输入顶点名称：";
+                            std::cout<<"名称：";
                             std::string name;
                             std::cin>>name;
                             LocationInfo info=graph.GetVertex(name);
@@ -204,7 +82,7 @@ int main()
                         }
                         case 3:
                         {
-                            std::cout<<"请输入顶点名称、顶点类型、建议游览时间：";
+                            std::cout<<"输入 名称 类型 时间：";
                             std::string name,type;
                             int visitTime;
                             std::cin>>name>>type>>visitTime;
@@ -213,7 +91,7 @@ int main()
                         }
                         case 4:
                         {
-                            std::cout<<"请输入顶点名称：";
+                            std::cout<<"名称：";
                             std::string name;
                             std::cin>>name;
                             graph.DeleteVertex(name);
@@ -236,14 +114,7 @@ int main()
                 case 2:
                 {
                     int sub;
-                    std::cout<< "边相关操作：\n"
-                                "1. 输出特定边信息\n"
-                                "2. 输出所有边信息\n"
-                                "3. 添加一条边\n"
-                                "4. 删除一条边\n"
-                                "5. 将边存储到文件\n"
-                                "6. 返回上一级菜单\n"
-                                "请输入选项编号：";
+                    std::cout<< "边操作：1.查询 2.列出所有 3.添加 4.删除 5.保存 6.返回\n";
                     std::cin>>sub;
                     switch (sub)
                     {
@@ -252,8 +123,7 @@ int main()
                             std::cout<<"请输入边的起点与终点：";
                             std::string u,v;
                             std::cin>>u>>v;
-                            EWeight w=graph.GetEdge(u,v);
-                            std::cout<<u<<" <---> "<<v<<" 距离为："<<w<<"\n";
+                            std::cout<<u<<" <---> "<<v<<" 距离为："<<graph.GetEdge(u,v)<<"\n";
                             break;
                         }
                         case 2:
@@ -332,9 +202,7 @@ int main()
                             int sum=0;
                             std::cout<<"最小生成树的边如下（起点,终点,权重）：\n";
                             for (const Edge& e : mst){
-                                std::string name_u=graph.GetVertex(e.from).name;
-                                std::string name_v=graph.GetVertex(e.to).name;
-                                std::cout<<name_u<<" - "<<name_v<<" : "<<e.weight<<"\n";
+                                std::cout<<graph.GetVertex(e.from).name<<" - "<<graph.GetVertex(e.to).name<<" : "<<e.weight<<"\n";
                                 sum+=e.weight;
                             }
                             std::cout<<"总权重="<<sum<<"\n";
@@ -351,11 +219,11 @@ int main()
                         std::cout<<"拓扑序长度必须大于 0。\n";
                         break;
                     }
-                    std::vector <std::string> order(n);
-                    for (int i=0;i<n;i++){
-                        std::cin>>order[i];
+                    std::vector <std::string> seq(n);
+                    for (std::string& s : seq){
+                        std::cin>>s;
                     }
-                    int d=TopologicalShortestPath(graph,order);
+                    int d=TopologicalShortestPath(graph,seq);
                     if (d<0){
                         std::cout<<"路径不可达或存在不存在的顶点。\n";
                     }
@@ -381,4 +249,121 @@ int main()
         }
     }
     return 0;
+}
+
+// 读取节点文件
+std::vector<LocationInfo> ReadNodes(const std::string& path)
+{
+    std::ifstream fin(path);
+    if (!fin){
+        throw GraphException("无法打开节点文件: "+path);
+    }
+    std::vector <LocationInfo> nodes;
+    std::string line;
+    while (std::getline(fin,line)){
+        if (line.empty()){
+            continue;
+        }
+        std::istringstream sin(line);
+        std::string name,type;
+        int visitTime;
+        if (!std::getline(sin,name,',')){
+            continue;
+        }
+        if (!std::getline(sin,type,',')){
+            continue;
+        }
+        if (!(sin>>visitTime)){
+            continue;
+        }
+        nodes.emplace_back(name,type,visitTime);
+    }
+    return nodes;
+}
+
+std::vector<std::tuple<std::string,std::string,int>> ReadEdges(const std::string& path)
+{
+    std::ifstream fin(path);
+    if (!fin){
+        throw GraphException("无法打开边文件: "+path);
+    }
+    std::vector<std::tuple<std::string,std::string,int>> edges;
+    std::string line;
+    while (std::getline(fin,line)){
+        if (line.empty()){
+            continue;
+        }
+        std::istringstream sin(line);
+        std::string from,to;
+        int weight;
+        if (!std::getline(sin,from,',')){
+            continue;
+        }
+        if (!std::getline(sin,to,',')){
+            continue;
+        }
+        if (!(sin>>weight)){
+            continue;
+        }
+        edges.push_back({from,to,weight});
+    }
+    return edges;
+}
+
+void init(LGraph& graph)        // 初始化图：从文件加载节点与边
+{
+    graph=LGraph();             // 重置为新图
+    std::vector <LocationInfo> nodes=ReadNodes(nodes_path);
+    std::vector<std::tuple<std::string,std::string,int>> edges=ReadEdges(edges_path);
+    for (const LocationInfo& v : nodes){
+        graph.InsertVertex(v);
+    }
+    for (std::tuple<std::string,std::string,int>& e : edges){
+        const auto& [u,v,w]=e;
+        graph.InsertEdge(u,v,w);
+    }
+}
+
+void ShowAllNodes(const LGraph& graph)      // 显示所有顶点
+{
+    for (const VertexNode& v : graph.List()){
+        const LocationInfo& info=v.info;
+        std::cout<<info.name<<","<<info.type<<","<<info.visitTime<<std::endl;
+    }
+}
+
+void ShowAllEdges(const LGraph& graph)      // 显示所有边
+{
+    std::vector <Edge> edges=graph.SortedEdges();
+    for (const Edge& e : edges){
+        const std::string& name_u=graph.GetVertex(e.from).name;
+        const std::string& name_v=graph.GetVertex(e.to).name;
+        std::cout<<name_u<<","<<name_v<<","<<e.weight<<std::endl;
+    }
+}
+
+void StoreNodes(const std::string& path,const LGraph& graph)    // 将顶点存储到文件
+{
+    std::ofstream fout(path);
+    if (!fout){
+        throw GraphException("无法创建文件: "+path);
+    }
+    for (const VertexNode& v : graph.List()){
+        const LocationInfo& info=v.info;
+        fout<<info.name<<","<<info.type<<","<<info.visitTime<<"\n";
+    }
+}
+
+void StoreEdges(const std::string& path,const LGraph& graph)    // 将边存储到文件
+{
+    std::ofstream fout(path);
+    if (!fout){
+        throw GraphException("无法创建文件: "+path);
+    }
+    std::vector<Edge> edges=graph.SortedEdges();
+    for (const Edge& e : edges){
+        std::string name_u=graph.GetVertex(e.from).name;
+        std::string name_v=graph.GetVertex(e.to).name;
+        fout<<name_u<<","<<name_v<<","<<e.weight<<"\n";
+    }
 }

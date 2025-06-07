@@ -31,9 +31,8 @@ namespace Graph
                 return true;
             }
             DSU dsu (n);
-            const std::vector <VertexNode>& ver_list=graph.List();
             for (Vertex u=0;u<n;u++){                       // 只处理 u<v 的边，避免重复
-                for (const Edge& e : ver_list[u].adj){
+                for (const Edge& e : graph.List()[u].adj){
                     if (u<e.to){
                         dsu.Union(u,e.to);
                     }
@@ -41,7 +40,7 @@ namespace Graph
             }
             Vertex root=dsu.Find(0);
             for (int i=0;i<n;i++){
-                if (ver_list[i].adj.empty()||dsu.Find(i)!=root){
+                if (graph.List()[i].adj.empty()||dsu.Find(i)!=root){
                     return false;
                 }
             }
@@ -53,8 +52,7 @@ namespace Graph
             if (!IsConnected(graph)){
                 return false;
             }
-            const auto& ver_list=graph.List();
-            for (const VertexNode& v : ver_list){
+            for (const VertexNode& v : graph.List()){
                 if (v.adj.size()%2){
                     return false;
                 }
@@ -68,39 +66,34 @@ namespace Graph
                 return {};
             }
             size_t n=graph.VertexCount();
-            const std::vector <VertexNode>& ver_list=graph.List();
-            // 将每条无向边拆成两条有向边，编号为 0..2m-1
-            // 用 vector <bool> 标记每条“有向边”是否已访问
-            std::vector <std::vector<std::pair<Vertex,size_t>>> adj(n);
+            std::vector<std::vector<std::pair<Vertex,size_t>>> adj(n);
             size_t edgeId=0;
             for (Vertex u=0;u<n;u++){
-                for (const Edge& e : ver_list[u].adj){
-                    if (u<e.to){                                            // 只添加 u<v 的情况，对应两条有向边
+                for (const Edge& e : graph.List()[u].adj){
+                    if (u<e.to){
                         adj[u].emplace_back(e.to,edgeId);
                         adj[e.to].emplace_back(u,edgeId);
                         edgeId++;
                     }
                 }
             }
-            std::vector <bool> used(2*edgeId,false);                    // 标记 2*edgeId 个“有向边”
+            std::vector <bool> used(2*edgeId,false);
             std::vector <size_t> idx(n,0);
             std::stack <Vertex> stk;
             std::list <Vertex> res;
             stk.push(start);
             while (!stk.empty()){
                 Vertex u=stk.top();
-                auto& it=idx[u];
-                while (it<adj[u].size()&&used[2*adj[u][it].second+(adj[u][it].first<u ? 1 : 0)]){    // 寻找一条未访问的有向边
-                    it++;
+                while (idx[u]<adj[u].size()&&used[2*adj[u][idx[u]].second+(adj[u][idx[u]].first<u)]){
+                    idx[u]++;
                 }
-                if (it==adj[u].size()){        // 没有可走的边时，输出顶点
+                if (idx[u]==adj[u].size()){
                     stk.pop();
                     res.push_back(u);
                 }
                 else {
-                    auto [v,eid]=adj[u][it];   // 标记对应的两条有向边已访问
-                    used[2*eid]=true;
-                    used[2*eid+1]=true;
+                    auto [v,eid]=adj[u][idx[u]];
+                    used[2*eid]=used[2*eid+1]=true;
                     stk.push(v);
                 }
             }
@@ -182,9 +175,8 @@ namespace Graph
             DSU dsu(n);
             std::vector <Edge> edges;
             edges.reserve(graph.EdgesCount());
-            const std::vector <VertexNode>& ver_list=graph.List();
             for (Vertex u=0;u<n;u++){                               // 只收集 u<v 的那半边
-                for (const Edge& e : ver_list[u].adj){
+                for (const Edge& e : graph.List()[u].adj){
                     if (u<e.to){
                         edges.push_back(e);
                     }
@@ -201,10 +193,7 @@ namespace Graph
                     }
                 }
             }
-            if (res.size()!=n-1){
-                return {};
-            }
-            return res;
+            return res.size()==n-1 ? res : std::vector<Edge>{};
         }
     }
 }
