@@ -72,7 +72,18 @@ namespace Graph
         if (it==ver_map.end()){
             throw GraphException("顶点"+oldName+"不存在");
         }
-        ver_list[it->second].info=newInfo;
+        Vertex id=it->second;
+        const std::string& newName=newInfo.name;
+
+        // 处理顶点重命名
+        if (oldName!=newName){
+            if (ver_map.find(newName)!=ver_map.end()){
+                throw GraphException("新名称"+newName+"已存在");
+            }
+            ver_map.erase(oldName);
+            ver_map[newName]=id;
+        }
+        ver_list[id].info=newInfo;
     }
 
     LocationInfo LGraph::GetVertex(const std::string& name) const

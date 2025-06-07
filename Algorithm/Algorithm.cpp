@@ -66,6 +66,12 @@ namespace Graph
                 return {};
             }
             size_t n=graph.VertexCount();
+            if (!n){
+                return {};
+            }
+            if (start>=n){
+                throw GraphException("起始顶点ID越界");
+            }
             std::vector<std::vector<std::pair<Vertex,size_t>>> adj(n);
             size_t edgeId=0;
             for (Vertex u=0;u<n;u++){
@@ -97,6 +103,7 @@ namespace Graph
                     stk.push(v);
                 }
             }
+            res.reverse();
             return res;
         }
 
