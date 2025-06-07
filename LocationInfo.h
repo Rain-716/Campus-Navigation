@@ -10,7 +10,7 @@ namespace Graph
         std::string name,type;
         int visitTime=0;
         LocationInfo()=default;
-        LocationInfo(std::string& n,std::string& t,int v) noexcept : name(n),type(t),visitTime(v) {}
+        LocationInfo(const std::string& n,const std::string& t,int v) noexcept : name(n),type(t),visitTime(v) {}
     };
 }
 

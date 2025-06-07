@@ -45,7 +45,7 @@ int main()
         5. 最短距离
         6. 最小生成树
         7. 拓扑受限路径
-        8. 退出 )";
+        8. 退出 )"<<"\n";
         int choice;
         if (!(std::cin>>choice)){
             std::cin.clear();
