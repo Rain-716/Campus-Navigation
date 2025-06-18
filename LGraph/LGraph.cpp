@@ -110,11 +110,12 @@ namespace Graph
         if (it_u==ver_map.end()||it_v==ver_map.end()){
             throw GraphException("插入边时，顶点不存在");
         }
-        if (ExistEdge(u,v)){
-            throw GraphException("边"+u+" - "+v+"已存在");
-        }
         Vertex uid=it_u->second;
         Vertex vid=it_v->second;
+        if (ExistEdge(u,v)){
+            UpdateEdge(u,v,weight);
+            return;
+        }
         ver_list[uid].adj.emplace_back(uid,vid,weight);
         ver_list[vid].adj.emplace_back(vid,uid,weight);
         edgeNum++;

@@ -5,6 +5,11 @@
 #include <string>
 #include <tuple>
 #include <limits>
+#include <queue>
+#include <stack>
+#include <algorithm>
+#include <functional>
+#include <numeric>
 #include "LGraph/LGraph.h"
 #include "Algorithm/Algorithm.h"
 #include "LocationInfo.h"
@@ -13,357 +18,223 @@
 using namespace Graph;
 using namespace Graph::Algorithm;
 
-static const std::string nodes_path="data/nodes.csv";
-static const std::string edges_path="data/edges.csv";
+static const std::string nodes_path = "data/nodes.csv";
+static const std::string edges_path = "data/edges.csv";
+static const std::string command_path = "cmd/command.txt";
+static const std::string answer_path = "cmd/answer.txt";
 
-// 工具函数声明
+// 前置声明
 std::vector<LocationInfo> ReadNodes(const std::string& path);
-std::vector<std::tuple<std::string,std::string,int>> ReadEdges(const std::string& path);
-void init(LGraph& graph);
-void ShowAllNodes(const LGraph& graph);
-void ShowAllEdges(const LGraph& graph);
-void StoreNodes(const std::string& path,const LGraph& graph);
-void StoreEdges(const std::string& path,const LGraph& graph);
+std::vector<std::tuple<std::string, std::string, int>> ReadEdges(const std::string& path);
+void initGraph(LGraph& graph);
+bool existEulerPath(const LGraph& graph);
+std::pair<int, std::vector<std::string>> shortestPathWithTrace(const LGraph& graph, const std::string& src, const std::string& dst);
 
-int main()
-{
+int main() {
     LGraph graph;
-    try { init(graph); }
-    catch (const GraphException& e){
-        std::cerr<<"初始化失败: "<<e.what()<<std::endl;
+    try { initGraph(graph); }
+    catch (const GraphException& e) {
+        std::cerr << "初始化失败: " << e.what() << std::endl;
         return -1;
     }
 
-    while (true)
-    {
-        std::cout<<R"(欢迎使用校园导航系统！
-        请选择操作：
-        1. 顶点操作
-        2. 边操作
-        3. 重新加载数据
-        4. 判断欧拉回路
-        5. 最短距离
-        6. 最小生成树
-        7. 拓扑受限路径
-        8. 退出 )"<<"\n";
-        int choice;
-        if (!(std::cin>>choice)){
-            std::cin.clear();
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
-            continue;
-        }
-
-        try {
-            switch (choice)
-            {
-                case 1:
-                {
-                    std::cout<<"顶点操作：1.查询 2.列出所有 3.添加 4.删除 5.保存 6.返回\n";
-                    int sub;
-                    std::cin>>sub;
-                    switch (sub)
-                    {
-                        case 1:
-                        {
-                            std::cout<<"名称：";
-                            std::string name;
-                            std::cin>>name;
-                            LocationInfo info=graph.GetVertex(name);
-                            std::cout<<"顶点名称："<<info.name
-                                     <<"顶点类型："<<info.type
-                                     <<"建议游览时间："<<info.visitTime<<" 分钟\n";
-                            break;
-                        }
-                        case 2:
-                        {
-                            std::cout<<"所有顶点信息：\n";
-                            ShowAllNodes(graph);
-                            break;
-                        }
-                        case 3:
-                        {
-                            std::cout<<"输入 名称 类型 时间：";
-                            std::string name,type;
-                            int visitTime;
-                            std::cin>>name>>type>>visitTime;
-                            graph.InsertVertex({name,type,visitTime});
-                            break;
-                        }
-                        case 4:
-                        {
-                            std::cout<<"名称：";
-                            std::string name;
-                            std::cin>>name;
-                            graph.DeleteVertex(name);
-                            break;
-                        }
-                        case 5:
-                        {
-                            std::cout<<"正在将顶点存储到 test_nodes.csv ...\n";
-                            StoreNodes("test_nodes.csv",graph);
-                            std::cout<<"存储成功！\n";
-                            break;
-                        }
-                        case 6:
-                            break;
-                        default:
-                            std::cout<<"无效选项，请重试。\n";
-                    }
-                    break;
-                }
-                case 2:
-                {
-                    int sub;
-                    std::cout<< "边操作：1.查询 2.列出所有 3.添加 4.删除 5.保存 6.返回\n";
-                    std::cin>>sub;
-                    switch (sub)
-                    {
-                        case 1:
-                        {
-                            std::cout<<"请输入边的起点与终点：";
-                            std::string u,v;
-                            std::cin>>u>>v;
-                            std::cout<<u<<" <---> "<<v<<" 距离为："<<graph.GetEdge(u,v)<<"\n";
-                            break;
-                        }
-                        case 2:
-                        {
-                            std::cout<<"所有边信息（起点,终点,权重）：\n";
-                            ShowAllEdges(graph);
-                            break;
-                        }
-                        case 3:
-                        {
-                            std::cout<<"请输入起点名称、终点名称、距离：";
-                            std::string u,v;
-                            int w;
-                            std::cin>>u>>v>>w;
-                            graph.InsertEdge(u,v,w);
-                            break;
-                        }
-                        case 4:
-                        {
-                            std::cout<<"请输入起点名称、终点名称：";
-                            std::string u,v;
-                            std::cin>>u>>v;
-                            graph.DeleteEdge(u,v);
-                            break;
-                        }
-                        case 5:
-                        {
-                            std::cout<<"正在将边存储到 test_edges.csv ...\n";
-                            StoreEdges("test_edges.csv",graph);
-                            std::cout<<"存储成功！\n";
-                            break;
-                        }
-                        case 6:
-                            break;
-                        default:
-                            std::cout<<"无效选项，请重试。\n";
-                    }
-                    break;
-                }
-                case 3:
-                {
-                    init(graph);
-                    std::cout<<"已重新加载点与边。\n";
-                    break;
-                }
-                case 4:
-                {
-                    std::cout<<(ExistEulerCircuit(graph) ? "存在欧拉回路" : "不存在欧拉回路")<<"\n";
-                    break;
-                }
-                case 5:
-                {
-                    std::cout<<"请输入两个地点（空格分隔）：";
-                    std::string x,y;
-                    std::cin>>x>>y;
-                    int d=GetShortestPath(graph,x,y);
-                    if (d<0){
-                        std::cout<<"两点不可达或不存在顶点。\n";
-                    }
-                    else{
-                        std::cout<<x<<" 和 "<<y<<" 之间的最短距离为："<<d<<"\n";
-                    }
-                    break;
-                }
-                case 6:
-                {
-                    if (!IsConnected(graph)){
-                        std::cout<<"图不连通，无法构造最小生成树。\n";
-                    }
-                    else{
-                        std::vector <Edge> mst=MinimumSpanningTree(graph);
-                        if (mst.empty()){
-                            std::cout<<"图无法形成生成树（可能存在孤立顶点）。\n";
-                        }
-                        else {
-                            int sum=0;
-                            std::cout<<"最小生成树的边如下（起点,终点,权重）：\n";
-                            for (const Edge& e : mst){
-                                std::cout<<graph.GetVertex(e.from).name<<" - "<<graph.GetVertex(e.to).name<<" : "<<e.weight<<"\n";
-                                sum+=e.weight;
-                            }
-                            std::cout<<"总权重="<<sum<<"\n";
-                        }
-                    }
-                    break;
-                }
-                case 7:
-                {
-                    std::cout<<"请输入拓扑序：第一行 n，第二行 n 个地点名称（空格分隔）\n";
-                    int n;
-                    std::cin>>n;
-                    if (n<=0){
-                        std::cout<<"拓扑序长度必须大于 0。\n";
-                        break;
-                    }
-                    std::vector <std::string> seq(n);
-                    for (std::string& s : seq){
-                        std::cin>>s;
-                    }
-                    int d=TopologicalShortestPath(graph,seq);
-                    if (d<0){
-                        std::cout<<"路径不可达或存在不存在的顶点。\n";
-                    }
-                    else{
-                        std::cout<<"拓扑受限最短路径总距离="<<d<<"\n";
-                    }
-                    break;
-                }
-                case 8:
-                {
-                    std::cout<<"感谢使用，再见！开发者：Rain\n";
-                    return 0;
-                }
-                default:
-                    std::cout<<"无效选项，请输入 1-8 之间的数字。\n";
+    std::ifstream cmdIn(command_path);
+    std::ofstream ansOut(answer_path);
+    if (!cmdIn || !ansOut) {
+        std::cerr << "无法打开命令或答案文件" << std::endl;
+        return -1;
+    }
+    std::string line;
+    while (std::getline(cmdIn, line)) {
+        if (line.empty()) continue;
+        std::istringstream ss(line);
+        std::string cmd;
+        ss >> cmd;
+        if (cmd == "SHORTEST_PATH") {
+            std::string u, v;
+            ss >> u >> v;
+            auto [dist, path] = shortestPathWithTrace(graph, u, v);
+            if (dist < 0) {
+                ansOut << "NA" << std::endl;
+            } else {
+                ansOut << "DIST " << dist << " PATH";
+                for (auto& name : path) ansOut << " " << name;
+                ansOut << std::endl;
             }
-        }
-        catch (const GraphException& e){
-            std::cerr<<"操作失败: "<<e.what()<<"\n";
-        }
-        catch (const std::exception& e){
-            std::cerr<<"未知错误: "<<e.what()<<"\n";
+        } else if (cmd == "ADJ_EDGES") {
+            std::string u;
+            ss >> u;
+            if (!graph.ExistVertex(u)) {
+                ansOut << "NONE" << std::endl;
+                continue;
+            }
+            size_t uid = graph.Map().at(u);
+            const auto& adj = graph.List()[uid].adj;
+            if (adj.empty()) {
+                ansOut << "NONE" << std::endl;
+                continue;
+            }
+            // 收集并按顶点名排序
+            std::vector<std::pair<std::string, int>> neigh;
+            for (const auto& e : adj) {
+                neigh.emplace_back(graph.GetVertex(e.to).name, e.weight);
+            }
+            std::sort(neigh.begin(), neigh.end(), [](auto& a, auto& b){ return a.first < b.first; });
+            bool first=true;
+            for (auto& p : neigh) {
+                if (!first) ansOut << " "; first=false;
+                ansOut << p.first << "(" << p.second << ")";
+            }
+            ansOut << std::endl;
+        } else if (cmd == "FIND_TYPE") {
+            std::string type;
+            ss >> type;
+            bool first = true;
+            for (auto& vnode : graph.List()) {
+                if (vnode.info.type == type) {
+                    if (!first) ansOut << " "; first = false;
+                    ansOut << vnode.info.name;
+                }
+            }
+            ansOut << std::endl;
+        } else if (cmd == "INSERT_EDGE") {
+            std::string u, v; int w;
+            ss >> u >> v >> w;
+            graph.InsertEdge(u, v, w);
+            ansOut << "OK" << std::endl;
+        } else if (cmd == "DELETE_EDGE") {
+            std::string u, v;
+            ss >> u >> v;
+            graph.DeleteEdge(u, v);
+            ansOut << "OK" << std::endl;
+        } else if (cmd == "MODIFY_EDGE_WEIGHT") {
+            std::string u, v; int w;
+            ss >> u >> v >> w;
+            graph.UpdateEdge(u, v, w);
+            ansOut << "OK" << std::endl;
+        } else if (cmd == "INSERT_NODE") {
+            std::string name, type; int vt;
+            ss >> name >> type >> vt;
+            graph.InsertVertex(LocationInfo(name, type, vt));
+            ansOut << "OK" << std::endl;
+        } else if (cmd == "DELETE_NODE") {
+            std::string name;
+            ss >> name;
+            graph.DeleteVertex(name);
+            ansOut << "OK" << std::endl;
+        } else if (cmd == "EULERIAN_PATH") {
+            ansOut << (existEulerPath(graph) ? "YES" : "NO") << std::endl;
+        } else if (cmd == "MST_INFO") {
+            auto edges = MinimumSpanningTree(graph);
+            // 判断是否连通（应有 n-1 条边）
+            if (edges.size() != graph.VertexCount() ? graph.VertexCount() - 1 : 0) {
+                // 修正：当节点>0且边数不足时视为断开
+            }
+            if (graph.VertexCount() > 0 && edges.size() != graph.VertexCount() - 1) {
+                ansOut << "DISCONNECTED" << std::endl;
+            } else {
+                int total = 0;
+                std::vector<std::pair<std::string,std::string>> names;
+                for (auto& e : edges) {
+                    total += e.weight;
+                    names.emplace_back(graph.GetVertex(e.from).name, graph.GetVertex(e.to).name);
+                }
+                std::vector<size_t> idx(names.size()); std::iota(idx.begin(), idx.end(), 0);
+                std::sort(idx.begin(), idx.end(), [&](size_t a, size_t b) { return names[a].first < names[b].first; });
+                ansOut << "MST " << total;
+                for (auto i : idx) {
+                    auto& p = names[i];
+                    int w = graph.GetEdge(p.first, p.second);
+                    ansOut << " " << p.first << "-" << p.second << ":" << w;
+                }
+                ansOut << std::endl;
+            }
         }
     }
     return 0;
 }
 
-// 读取节点文件
-std::vector<LocationInfo> ReadNodes(const std::string& path)
-{
+std::vector<LocationInfo> ReadNodes(const std::string& path) {
     std::ifstream fin(path);
-    if (!fin){
-        throw GraphException("无法打开节点文件: "+path);
-    }
-    std::vector <LocationInfo> nodes;
+    if (!fin) throw GraphException("无法打开节点文件: " + path);
+    std::vector<LocationInfo> nodes;
     std::string line;
-    while (std::getline(fin,line)){
-        if (line.empty()){
-            continue;
-        }
-        std::istringstream sin(line);
-        std::string name,type;
-        int visitTime;
-        if (!std::getline(sin,name,',')){
-            continue;
-        }
-        if (!std::getline(sin,type,',')){
-            continue;
-        }
-        if (!(sin>>visitTime)){
-            continue;
-        }
-        nodes.emplace_back(name,type,visitTime);
+    while (std::getline(fin, line)) {
+        if (line.empty()) continue;
+        std::istringstream ss(line);
+        std::string name, type, vt_str;
+        if (!std::getline(ss, name, ',')) continue;
+        if (!std::getline(ss, type, ',')) continue;
+        if (!std::getline(ss, vt_str, ',')) continue;
+        nodes.emplace_back(name, type, std::stoi(vt_str));
     }
     return nodes;
 }
 
-std::vector<std::tuple<std::string,std::string,int>> ReadEdges(const std::string& path)
-{
+std::vector<std::tuple<std::string, std::string, int>> ReadEdges(const std::string& path) {
     std::ifstream fin(path);
-    if (!fin){
-        throw GraphException("无法打开边文件: "+path);
-    }
-    std::vector<std::tuple<std::string,std::string,int>> edges;
+    if (!fin) throw GraphException("无法打开边文件: " + path);
+    std::vector<std::tuple<std::string, std::string, int>> edges;
     std::string line;
-    while (std::getline(fin,line)){
-        if (line.empty()){
-            continue;
-        }
-        std::istringstream sin(line);
-        std::string from,to;
-        int weight;
-        if (!std::getline(sin,from,',')){
-            continue;
-        }
-        if (!std::getline(sin,to,',')){
-            continue;
-        }
-        if (!(sin>>weight)){
-            continue;
-        }
-        edges.push_back({from,to,weight});
+    while (std::getline(fin, line)) {
+        if (line.empty()) continue;
+        std::istringstream ss(line);
+        std::string u, v, w_str;
+        if (!std::getline(ss, u, ',')) continue;
+        if (!std::getline(ss, v, ',')) continue;
+        if (!std::getline(ss, w_str, ',')) continue;
+        edges.emplace_back(u, v, std::stoi(w_str));
     }
     return edges;
 }
 
-void init(LGraph& graph)        // 初始化图：从文件加载节点与边
-{
-    graph=LGraph();             // 重置为新图
-    std::vector <LocationInfo> nodes=ReadNodes(nodes_path);
-    std::vector<std::tuple<std::string,std::string,int>> edges=ReadEdges(edges_path);
-    for (const LocationInfo& v : nodes){
-        graph.InsertVertex(v);
-    }
-    for (std::tuple<std::string,std::string,int>& e : edges){
-        const auto& [u,v,w]=e;
-        graph.InsertEdge(u,v,w);
-    }
+void initGraph(LGraph& graph) {
+    graph = LGraph();
+    auto nodes = ReadNodes(nodes_path);
+    for (auto& v : nodes) graph.InsertVertex(v);
+    auto edges = ReadEdges(edges_path);
+    for (auto& t : edges) graph.InsertEdge(std::get<0>(t), std::get<1>(t), std::get<2>(t));
 }
 
-void ShowAllNodes(const LGraph& graph)      // 显示所有顶点
-{
-    for (const VertexNode& v : graph.List()){
-        const LocationInfo& info=v.info;
-        std::cout<<info.name<<","<<info.type<<","<<info.visitTime<<std::endl;
-    }
+bool existEulerPath(const LGraph& graph) {
+    size_t n = graph.VertexCount();
+    if (n == 0) return true;
+    if (!IsConnected(graph)) return false;
+    int odd = 0;
+    for (auto& v : graph.List()) if (v.adj.size() % 2) odd++;
+    return odd == 0 || odd == 2;
 }
 
-void ShowAllEdges(const LGraph& graph)      // 显示所有边
-{
-    std::vector <Edge> edges=graph.SortedEdges();
-    for (const Edge& e : edges){
-        const std::string& name_u=graph.GetVertex(e.from).name;
-        const std::string& name_v=graph.GetVertex(e.to).name;
-        std::cout<<name_u<<","<<name_v<<","<<e.weight<<std::endl;
+std::pair<int, std::vector<std::string>> shortestPathWithTrace(const LGraph& graph, const std::string& xName, const std::string& yName) {
+    if (!graph.ExistVertex(xName) || !graph.ExistVertex(yName)) return {-1, {}};
+    const auto& m = graph.Map();
+    size_t xid = m.at(xName), yid = m.at(yName);
+    int n = graph.VertexCount();
+    const auto& vlist = graph.List();
+    const long long INF = std::numeric_limits<long long>::max();
+    std::vector<long long> dist(n, INF);
+    std::vector<int> prev(n, -1);
+    dist[xid] = 0;
+    using PII = std::pair<long long,size_t>;
+    std::priority_queue<PII, std::vector<PII>, std::greater<PII>> pq;
+    pq.push({0, xid});
+    while (!pq.empty()) {
+        auto [d,u] = pq.top(); pq.pop();
+        if (d > dist[u]) continue;
+        if (u == yid) break;
+        for (auto& e : vlist[u].adj) {
+            size_t v = e.to;
+            long long nd = d + e.weight;
+            if (nd < dist[v]) {
+                dist[v] = nd;
+                prev[v] = u;
+                pq.push({nd, v});
+            }
+        }
     }
-}
-
-void StoreNodes(const std::string& path,const LGraph& graph)    // 将顶点存储到文件
-{
-    std::ofstream fout(path);
-    if (!fout){
-        throw GraphException("无法创建文件: "+path);
-    }
-    for (const VertexNode& v : graph.List()){
-        const LocationInfo& info=v.info;
-        fout<<info.name<<","<<info.type<<","<<info.visitTime<<"\n";
-    }
-}
-
-void StoreEdges(const std::string& path,const LGraph& graph)    // 将边存储到文件
-{
-    std::ofstream fout(path);
-    if (!fout){
-        throw GraphException("无法创建文件: "+path);
-    }
-    std::vector<Edge> edges=graph.SortedEdges();
-    for (const Edge& e : edges){
-        std::string name_u=graph.GetVertex(e.from).name;
-        std::string name_v=graph.GetVertex(e.to).name;
-        fout<<name_u<<","<<name_v<<","<<e.weight<<"\n";
-    }
+    if (dist[yid] == INF) return {-1, {}};
+    std::vector<std::string> path;
+    for (int at = yid; at != -1; at = prev[at]) path.push_back(graph.GetVertex(at).name);
+    std::reverse(path.begin(), path.end());
+    return {(int)dist[yid], path};
 }
