@@ -1,5 +1,5 @@
 # ninja log v6
-86	1389	7719700286826269	CMakeFiles/CampusNavigation.dir/LGraph/LGraph.cpp.obj	525e252292ace247
-3	1426	7719700286055598	CMakeFiles/CampusNavigation.dir/Algorithm/Algorithm.cpp.obj	52f4c35defd5d2f0
-150	1909	7719700287474580	CMakeFiles/CampusNavigation.dir/main.cpp.obj	96764d5022322549
-1909	3020	7719700305105564	bin/CampusNavigation.exe	a246d449c23e7f91
+333	3289	7720061610770687	CMakeFiles/CampusNavigation.dir/LGraph/LGraph.cpp.obj	525e252292ace247
+7	3412	7720061607440674	CMakeFiles/CampusNavigation.dir/Algorithm/Algorithm.cpp.obj	52f4c35defd5d2f0
+655	3899	7720061614002286	CMakeFiles/CampusNavigation.dir/main.cpp.obj	96764d5022322549
+3899	6323	7720061646380278	bin/CampusNavigation.exe	a246d449c23e7f91

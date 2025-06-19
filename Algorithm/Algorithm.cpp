@@ -202,5 +202,68 @@ namespace Graph
             }
             return res.size()==n-1 ? res : std::vector<Edge>{};
         }
+
+        bool ExistEulerPath(const LGraph& graph)
+        {
+            Vertex n=graph.VertexCount();
+            if (!n){
+                return true;
+            }
+            if (!IsConnected(graph)){
+                return false;
+            }
+            int odd=0;
+            for (const VertexNode& v : graph.List()){
+                if (v.adj.size()%2){
+                    odd++;
+                }
+            }
+            return odd==0||odd==2;
+        }
+
+        std::pair<int, std::vector<std::string>> ShortestPathwithTrace(const LGraph& graph, const std::string& xName, const std::string& yName)
+        {
+            if (!graph.ExistVertex(xName)||!graph.ExistVertex(yName)){
+                return {-1,{}};
+            }
+            const std::map<std::string,Vertex>& map=graph.Map();
+            Vertex xid=map.at(xName),yid=map.at(yName);
+            int n=graph.VertexCount();
+            const std::vector<VertexNode>& list=graph.List();
+            const long long INF=std::numeric_limits<long long>::max();
+            std::vector <long long> dist(n,INF);
+            std::vector <int> prev(n,-1);
+            dist[xid]=0;
+            std::priority_queue<std::pair<long long,size_t>,std::vector<std::pair<long long,size_t>>,std::greater<std::pair<long long,size_t>>> pq;
+            pq.push({0,xid});
+            while (!pq.empty()){
+                auto [d,u]=pq.top();
+                pq.pop();
+                if (d>dist[u]){
+                    continue;
+                }
+                if (u==yid){
+                    break;
+                }
+                for (const Edge& e : list[u].adj){
+                    Vertex v=e.to;
+                    long long nd=d+e.weight;
+                    if (nd<dist[v]){
+                        dist[v]=nd;
+                        prev[v]=u;
+                        pq.push({nd,v});
+                    }
+                }
+            }
+            if (dist[yid]==INF){
+                return {-1,{}};
+            }
+            std::vector <std::string> path;
+            for (size_t to=yid;to!=-1;to=prev[to]){
+                path.push_back(graph.GetVertex(to).name);
+            }
+            std::reverse(path.begin(),path.end());
+            return {(int)dist[yid],path};
+        }
     }
 }

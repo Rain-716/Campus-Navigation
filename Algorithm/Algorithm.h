@@ -44,6 +44,10 @@ namespace Graph
 
         // Kruskal 算法计算最小生成树，返回组成 MST 的边列表，无则返回空
         std::vector<Edge> MinimumSpanningTree(const LGraph& graph);
+
+        bool ExistEulerPath(const LGraph& graph);
+
+        std::pair<int,std::vector<std::string>> ShortestPathwithTrace(const LGraph& graph,const std::string& xName,const std::string& yName);
     }
 }
 
